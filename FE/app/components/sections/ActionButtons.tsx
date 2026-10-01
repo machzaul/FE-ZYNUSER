@@ -23,13 +23,15 @@ export function ActionButtons({
 }: ActionButtonsProps) {
   const handleDownload = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE}/v1/submissions/${token}/download`, {
+      // Kita langsung fetch imageUrl (dari CDN/NOS) karena URL ini bersifat publik
+      // dan tidak membutuhkan x-app-key yang seringkali memblokir CORS di browser.
+      const response = await fetch(imageUrl, {
         method: 'GET',
-        headers: {
-          'x-app-key': API_KEY
-        }
+        // Jika CDN mendukung CORS, ini akan berhasil
       })
+      
       if (!response.ok) throw new Error('Download failed')
+      
       const blob = await response.blob()
       const file = new File([blob], `zyn-moment-${token}.jpg`, { type: blob.type || 'image/jpeg' })
 
@@ -47,17 +49,19 @@ export function ActionButtons({
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = 'zyn-moment.jpg'
+      a.download = `ZYN_Awakening_${token}.jpg`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      
       onDownloadSuccess?.()
     } catch {
+      // Jika fetch gagal (karena CORS atau alasan lain), fallback membuka link langsung
       window.open(imageUrl, '_blank')
       onDownloadSuccess?.()
     }
-  }, [imageUrl, onDownloadSuccess])
+  }, [imageUrl, onDownloadSuccess, token])
 
   return (
     <div

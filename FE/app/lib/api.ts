@@ -49,7 +49,8 @@ export async function getSessionData(token: string): Promise<ApiResponse<Session
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-    const res = await fetch(`${API_BASE}/v1/submissions/${token}/download`, {
+    // Perbaikan: Hapus '/download' agar memanggil endpoint JSON
+    const res = await fetch(`${API_BASE}/v1/submissions/${token}`, {
       cache: 'no-store',
       headers: {
         'x-app-key': API_KEY, 
@@ -67,16 +68,18 @@ export async function getSessionData(token: string): Promise<ApiResponse<Session
       return { data: null, error: 'api_error' }
     }
 
-    // Karena endpoint /download langsung mengembalikan file gambar (bukan JSON),
-    // kita cukup mengonfirmasi bahwa statusnya 200 OK (data ada), 
-    // lalu kita oper URL-nya langsung ke komponen agar dirender.
+    const rawResponse = await res.json()
+    // Sesuai respons JSON yang diberikan: { row: { resultImageUrl, ... } }
+    const apiData = rawResponse.row ? rawResponse.row : rawResponse
+
     const sessionData: SessionData = {
-      id: token,
+      id: apiData.sessionId || token,
       token: token,
-      imageUrl: `${API_BASE}/v1/submissions/${token}/download`,
+      // Mengambil resultImageUrl sebagai gambar utama
+      imageUrl: apiData.resultImageUrl || apiData.fileUrl || '',
       name: '',
       eventName: 'AWAKENING',
-      stats: MOCK_SESSION_DATA.stats, // Stats sudah tidak dipakai lagi karena menyatu di gambar
+      stats: MOCK_SESSION_DATA.stats,
     }
 
     return { data: sessionData, error: null }
