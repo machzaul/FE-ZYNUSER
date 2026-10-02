@@ -64,7 +64,7 @@ export async function getSessionData(token: string): Promise<ApiResponse<Session
     }
 
     if (!res.ok) {
-      return { data: null, error: 'api_error' }
+      return { data: null, error: `api_error_${res.status}` }
     }
 
     // Kita tidak menggunakan res.json() karena res berisi file PNG!
