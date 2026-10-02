@@ -40,48 +40,21 @@ export const MOCK_SESSION_DATA: SessionData = {
  * Fetch session data by token
  */
 export async function getSessionData(token: string): Promise<ApiResponse<SessionData>> {
-  // If explicit demo token or mock mode enabled
-  if (token === 'demo' || process.env.NEXT_PUBLIC_USE_MOCK === 'true') {
-    return { data: { ...MOCK_SESSION_DATA, token }, error: null }
+  // Langsung kembalikan URL ke komponen Client.
+  // KITA TIDAK BOLEH melakukan fetch() di sini karena Vercel akan diblokir oleh Cloudflare (Error 403)
+  // yang menyebabkan Vercel mengira gambarnya tidak ada (Data Deleted).
+  // Biarkan browser pengguna yang langsung memuat gambarnya!
+  
+  const sessionData: SessionData = {
+    id: token,
+    token: token,
+    imageUrl: `${API_BASE}/v1/submissions/${token}/download`,
+    name: '',
+    eventName: 'AWAKENING',
+    stats: MOCK_SESSION_DATA.stats,
   }
 
-  try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-    // Perbaikan Final: Menggunakan /download kembali karena backend HANYA memiliki route /download
-    // Endpoint ini mengembalikan gambar PNG secara langsung, BUKAN JSON.
-    const res = await fetch(`${API_BASE}/v1/submissions/${token}/download`, {
-      cache: 'no-store',
-      // Endpoint public, tidak perlu x-app-key untuk GET
-      signal: controller.signal,
-    })
-
-    clearTimeout(timeoutId)
-
-    if (res.status === 404) {
-      return { data: null, error: 'not_found' }
-    }
-
-    if (!res.ok) {
-      return { data: null, error: `api_error_${res.status}` }
-    }
-
-    // Kita tidak menggunakan res.json() karena res berisi file PNG!
-    const sessionData: SessionData = {
-      id: token,
-      token: token,
-      imageUrl: `${API_BASE}/v1/submissions/${token}/download`,
-      name: '',
-      eventName: 'AWAKENING',
-      stats: MOCK_SESSION_DATA.stats,
-    }
-
-    return { data: sessionData, error: null }
-  } catch (err) {
-    console.error(`[ZYN API] Failed to fetch session data:`, err)
-    return { data: null, error: 'api_error' }
-  }
+  return { data: sessionData, error: null }
 }
 
 /**
