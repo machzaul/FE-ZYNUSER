@@ -49,12 +49,11 @@ export async function getSessionData(token: string): Promise<ApiResponse<Session
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-    // Perbaikan: Hapus '/download' agar memanggil endpoint JSON
-    const res = await fetch(`${API_BASE}/v1/submissions/${token}`, {
+    // Perbaikan Final: Menggunakan /download kembali karena backend HANYA memiliki route /download
+    // Endpoint ini mengembalikan gambar PNG secara langsung, BUKAN JSON.
+    const res = await fetch(`${API_BASE}/v1/submissions/${token}/download`, {
       cache: 'no-store',
-      headers: {
-        'x-app-key': API_KEY, 
-      },
+      // Endpoint public, tidak perlu x-app-key untuk GET
       signal: controller.signal,
     })
 
@@ -68,15 +67,11 @@ export async function getSessionData(token: string): Promise<ApiResponse<Session
       return { data: null, error: 'api_error' }
     }
 
-    const rawResponse = await res.json()
-    // Sesuai respons JSON yang diberikan: { row: { resultImageUrl, ... } }
-    const apiData = rawResponse.row ? rawResponse.row : rawResponse
-
+    // Kita tidak menggunakan res.json() karena res berisi file PNG!
     const sessionData: SessionData = {
-      id: apiData.sessionId || token,
+      id: token,
       token: token,
-      // Mengambil resultImageUrl sebagai gambar utama
-      imageUrl: apiData.resultImageUrl || apiData.fileUrl || '',
+      imageUrl: `${API_BASE}/v1/submissions/${token}/download`,
       name: '',
       eventName: 'AWAKENING',
       stats: MOCK_SESSION_DATA.stats,

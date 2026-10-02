@@ -23,41 +23,20 @@ export function ActionButtons({
 }: ActionButtonsProps) {
   const handleDownload = useCallback(async () => {
     try {
-      // Kita langsung fetch imageUrl (dari CDN/NOS) karena URL ini bersifat publik
-      // dan tidak membutuhkan x-app-key yang seringkali memblokir CORS di browser.
-      const response = await fetch(imageUrl, {
-        method: 'GET',
-        // Jika CDN mendukung CORS, ini akan berhasil
-      })
+      // Karena backend (unlimited-api-dev) sudah menyetel header 'Content-Disposition: attachment'
+      // pada URL /download, kita hanya perlu mengarahkan browser ke URL tersebut.
+      // Browser akan secara otomatis mengunduh file alih-alih membukanya di tab baru.
       
-      if (!response.ok) throw new Error('Download failed')
-      
-      const blob = await response.blob()
-      const file = new File([blob], `zyn-moment-${token}.jpg`, { type: blob.type || 'image/jpeg' })
-
-      // Check if Web Share API is available and supports sharing files (iOS Safari supports this)
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: 'Zyn Moment',
-        })
-        onDownloadSuccess?.()
-        return
-      }
-
-      // Fallback for desktop or unsupported browsers
-      const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      a.href = url
-      a.download = `ZYN_Awakening_${token}.jpg`
+      a.href = imageUrl
+      a.download = `ZYN_Awakening_${token}.png` // Tetap tambahkan atribut fallback
+      a.target = '_blank'
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      URL.revokeObjectURL(url)
       
       onDownloadSuccess?.()
     } catch {
-      // Jika fetch gagal (karena CORS atau alasan lain), fallback membuka link langsung
       window.open(imageUrl, '_blank')
       onDownloadSuccess?.()
     }
