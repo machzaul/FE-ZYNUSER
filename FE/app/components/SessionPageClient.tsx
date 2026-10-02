@@ -30,6 +30,21 @@ export function SessionPageClient({ data, token }: SessionPageClientProps) {
     }
   }, [toastTimeoutId])
 
+  // Deteksi cerdas di sisi Client:
+  // Karena kita mem-bypass pengecekan Vercel (agar tidak diblokir Cloudflare),
+  // kita suruh browser pengguna untuk mencoba memuat gambar secara diam-diam.
+  // Jika gagal dimuat (misal karena 404 terhapus), kita ubah layar ke halaman 'deleted'.
+  useEffect(() => {
+    if (uiState === 'deleted') return; // Jika sudah di state deleted, abaikan
+
+    const img = new window.Image()
+    img.onerror = () => {
+      // Gambar gagal dimuat (kemungkinan besar 404 Not Found karena sudah dihapus)
+      setUiState('deleted')
+    }
+    img.src = imageUrl
+  }, [imageUrl, uiState])
+
   // Handle Escape key to close delete modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
